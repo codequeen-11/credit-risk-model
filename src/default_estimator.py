@@ -72,3 +72,35 @@ def create_proxy_target(df, n_clusters=3):
     ).astype(int)
 
     return rfm
+
+def create_training_data(df, processed_df):
+
+    target_df = create_proxy_target(df)[
+        ["CustomerId", "is_high_risk"]
+    ]
+
+    processed_df["CustomerId"] = df["CustomerId"].values
+
+    final_df = processed_df.merge(
+        target_df,
+        on="CustomerId",
+        how="left"
+    )
+
+    return final_df
+
+def create_transaction_level_target(df):
+
+    rfm = create_proxy_target(df)
+
+    target_df = rfm[
+        ["CustomerId", "is_high_risk"]
+    ]
+
+    final_df = df.merge(
+        target_df,
+        on="CustomerId",
+        how="left"
+    )
+
+    return final_df
