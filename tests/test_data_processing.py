@@ -1,5 +1,5 @@
 import pandas as pd
-
+from sklearn.pipeline import Pipeline
 from src.feature_engineering import (
     DateTimeFeatures,
     AggregateFeatures,
@@ -92,15 +92,17 @@ def test_process_data_returns_dataframe():
 def test_create_proxy_target():
     sample_df = pd.DataFrame(
         {
-            "CustomerId": [1, 1, 2, 2],
-            "TransactionId": [1, 2, 3, 4],
+            "CustomerId": [1, 1, 2, 2 ,3., 3],
+            "TransactionId": [1, 2, 3, 4, 5, 6],
             "TransactionStartTime": [
                 "2025-01-01",
                 "2025-01-02",
                 "2025-01-05",
                 "2025-01-06",
+                "2025-01-08",
+                "2025-01-09",
             ],
-            "Value": [100, 150, 50, 75],
+            "Value": [100, 150, 50, 75, 300, 250],
         }
     )
 
