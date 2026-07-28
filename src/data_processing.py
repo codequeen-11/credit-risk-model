@@ -118,9 +118,10 @@ full_pipeline = Pipeline(
 )
 
  
-def process_data(df):
-
+# def process_data(df):
+def process_data(df: pd.DataFrame) -> pd.DataFrame:
     pipeline = build_pipeline()
+
 
     transformed = pipeline.fit_transform(df)
 
@@ -136,7 +137,14 @@ def process_data(df):
     return transformed_df
 
 
-def create_proxy_target(df, n_clusters=3):
+# def create_proxy_target(df, n_clusters=3)
+#     -> pd.DataFrame:
+#     """Create a proxy credit-risk target using RFM clustering."""
+def create_proxy_target(
+    df: pd.DataFrame,
+    n_clusters: int = 3
+) -> pd.DataFrame:
+    """Create a proxy credit-risk target using RFM clustering."""
 
     df = df.copy()
 
@@ -153,9 +161,9 @@ def create_proxy_target(df, n_clusters=3):
         df.groupby("CustomerId")
         .agg(
             Recency=(
-                "TransactionStartTime",
+                "TransactionStartTime",  
                 lambda x: (
-                    snapshot_date - x.max()
+                    snapshot_date - x.max() 
                 ).days
             ),
             Frequency=(
@@ -210,4 +218,4 @@ def build_pipeline():
     """
     Return full preprocessing pipeline.
     """
-    return full_pipeline
+    return full_pipeline   
