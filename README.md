@@ -1,133 +1,289 @@
 # Credit Risk Modeling for BNPL Service
 
+# Credit Risk Modeling for Bati Bank
+
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3.0-orange)
+![MLflow](https://img.shields.io/badge/MLflow-Enabled-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 ## Project Overview
 
-This project builds an end-to-end credit scoring system for **Bati Bank's** new Buy-Now-Pay-Later (BNPL) service in partnership with an eCommerce platform. The system transforms customer transaction data into a predictive credit risk score, enabling automated loan approval decisions.
+Traditional credit scoring relies heavily on historical borrowing records, making it difficult for individuals with limited or no credit history to access financial services. This project develops a machine learning solution that predicts customer credit risk using transaction behavior as an alternative source of information.
 
-**Key Deliverables:**
-- Credit risk model with interpretable outputs
-- Containerized REST API for real-time scoring
-- Automated CI/CD pipeline for testing and deployment
-- MLflow experiment tracking and model registry
+The solution follows an end-to-end machine learning workflow, including data preprocessing, feature engineering, model training, hyperparameter tuning, explainability, automated testing, CI/CD, and an interactive Streamlit dashboard for communicating results.
 
 ---
 
-## Credit Scoring Business Understanding
+## Business Problem
 
-### How Basel II Influences Model Interpretability and Documentation
+Bati Bank aims to expand access to credit while minimizing financial risk. Many customers lack sufficient credit history for conventional scoring methods, making loan decisions difficult.
 
-The **Basel II Capital Accord** sets regulatory expectations for financial institutions' risk measurement practices. For credit scoring models, Basel II mandates:
-
-1. **Transparency Requirements**
-   - Models must be understandable to risk officers, auditors, and regulators
-   - Every modeling decision must be justified and documented
-   - The "use test" requires that model outputs are actually used in decision-making
-
-2. **Documentation Standards**
-   - Complete model development lifecycle documentation
-   - Variable selection rationale and performance metrics
-   - Validation results on out-of-time samples
-   - Regular monitoring and recalibration procedures
-
-3. **Interpretability as Compliance**
-   - Black-box models face regulatory scrutiny unless accompanied by explainability tools (SHAP, LIME)
-   - Weight of Evidence (WoE) transformations are preferred because they create monotonic relationships
-   - Logistic regression with WoE is a Basel II-friendly standard due to clear coefficient interpretation
-
-**Impact on this project:** We must prioritize interpretable features, document all transformations, and provide clear justification for our proxy target variable.
-
-### Proxy Variable Necessity and Business Risks
-
-**Why a proxy is necessary:**
-The raw transaction dataset contains no historical default labels. Banks typically need 12-24 months of loan performance data to observe defaults. Since this is a new BNPL service, we must infer credit risk from behavioral patterns (RFM analysis) as a proxy for default probability.
-
-**Business risks of proxy-based prediction:**
-
-| Risk Category | Description | Mitigation Strategy |
-|--------------|-------------|---------------------|
-| **False Positives** | Low-risk customers labeled as high-risk → lost revenue, poor customer experience | Conservative cluster assignment; manual review for borderline cases |
-| **False Negatives** | High-risk customers labeled as low-risk → unexpected defaults, financial loss | Higher risk tolerance for initial period; continuous model validation |
-| **Concept Drift** | Customer behavior patterns change over time | Monthly model retraining; monitoring distribution shifts |
-| **Regulatory Risk** | Proxy may have disparate impact on protected groups | Fairness audits; documenting proxy limitations explicitly |
-| **Validation Challenge** | Cannot directly validate against true defaults | A/B testing with small exposure; collect ground truth data over time |
-
-**Risk mitigation commitment:** This proxy is an **initial approximation** that will be validated against actual default data as it becomes available. The bank should collect ground truth labels for 6-12 months and recalibrate the model.
-
-### Trade-offs: Interpretable vs. High-Performance Models
-
-In regulated financial contexts, the choice between simple interpretable models and complex high-performance models involves significant trade-offs:
-
-| Dimension | Logistic Regression + WoE | Gradient Boosting (XGBoost/LightGBM) |
-|-----------|---------------------------|---------------------------------------|
-| **Interpretability** | ✅ High - coefficients directly show impact | ❌ Low - black box ensemble |
-| **Regulatory Acceptance** | ✅ Standard for Basel II compliance | ⚠️ Requires SHAP/LIME explanations |
-| **Predictive Performance** | ⭐⭐ Good baseline | ⭐⭐⭐⭐ Usually superior (5-15% better AUC) |
-| **Training Speed** | ✅ Very fast | ⚠️ Slower, requires tuning |
-| **Debugging Ease** | ✅ Easy to identify problematic variables | ❌ Difficult to trace decisions |
-| **Feature Engineering** | Requires WoE transformation | Handles raw features well |
-| **Overfitting Risk** | Low with regularization | Higher, needs careful tuning |
-| **Explainability to Customers** | ✅ Clear reasons for denial | ❌ "Algorithm said no" |
-
-**Our Recommendation for Bati Bank:**
-
-Implement a **two-model strategy**:
-
-1. **Primary Model: Logistic Regression with WoE**
-   - Used for regulatory reporting and customer explanations
-   - Provides Basel II-compliant decisioning
-   - Serves as the "official" credit scorecard
-
-2. **Secondary Model: XGBoost with SHAP explanations**
-   - Used for edge cases and higher-risk segments
-   - Generates feature importance for model improvement insights
-   - Provides performance uplift where interpretability is less critical
-
-**Decision Framework:**
-- Loan amount < $500 → Logistic Regression only
-- Loan amount $500-$2000 → Ensemble (both models must agree)
-- Loan amount > $2000 → XGBoost + SHAP explanations for human review
-
-This balanced approach maintains regulatory compliance while capturing performance gains where they matter most.
+This project addresses that challenge by using customer transaction data to identify high-risk and low-risk borrowers. The resulting model can support more informed lending decisions, improve consistency in credit assessment, and reduce potential default risk.
 
 ---
 
-## Project Structure
+## Project Objectives
 
+* Develop a reliable credit risk prediction model.
+* Engineer meaningful customer transaction features.
+* Compare multiple machine learning algorithms.
+* Optimize model performance using hyperparameter tuning.
+* Explain model predictions using SHAP.
+* Present results through an interactive dashboard.
+* Follow software engineering best practices for reproducibility and maintainability.
 
+---
+
+## Project Architecture
+
+```text
+Raw Transaction Data
+        │
+        ▼
+Data Preprocessing
+        │
+        ▼
+Feature Engineering (RFM)
+        │
+        ▼
+Proxy Target Creation
+        │
+        ▼
+Model Training & Evaluation
+        │
+        ▼
+Hyperparameter Tuning
+        │
+        ▼
+Model Explainability (SHAP)
+        │
+        ▼
+Dashboard & API
+```
+
+---
+
+## Repository Structure
+
+```text
 credit-risk-model/
-├── .github/workflows/
-│ └── ci.yml # CI/CD pipeline
+│
+├── app/
+│   ├── dashboard.py
+│   └── main.py
+│
 ├── data/
-│ ├── raw/ # Raw data (gitignored)
-│ └── processed/ # Processed data (gitignored)
+│   ├── raw/
+│   └── processed/
+│
+├── models/
+│   └── random_forest.pkl
+│
 ├── notebooks/
-│ └── eda.ipynb # Exploratory analysis
+│
+├── reports/
+│   ├── metrics.json
+│   ├── confusion_matrix.png
+│   ├── roc_curve.png
+│   ├── feature_importance.png
+│   └── shap_summary.png
+│
 ├── src/
-│ ├── init.py
-│ ├── data_processing.py # Feature engineering pipeline
-│ ├── train.py # Model training with MLflow
-│ ├── predict.py # Inference functions
-│ └── api/
-│ ├── main.py # FastAPI application
-│ └── pydantic_models.py # Request/response schemas
+│
 ├── tests/
-│ └── test_data_processing.py # Unit tests
-├── Dockerfile
-├── docker-compose.yml
+│
 ├── requirements.txt
-├── .gitignore
+│
 └── README.md
-
+```
 
 ---
 
-## Getting Started
+## Machine Learning Pipeline
 
-### Prerequisites
+The project consists of the following stages:
+
+* Data preprocessing
+* Missing value handling
+* Feature engineering
+* Customer aggregation
+* Datetime feature extraction
+* Proxy target creation using RFM clustering
+* Model training
+* Hyperparameter tuning with GridSearchCV
+* Model evaluation
+* Explainability using SHAP
+
+---
+
+## Model Performance
+
+### Best Model
+
+Random Forest Classifier
+
+### Best Hyperparameters
+
+| Parameter         | Value |
+| ----------------- | ----: |
+| n_estimators      |   200 |
+| max_depth         |  None |
+| min_samples_split |     2 |
+
+### Evaluation Metrics
+
+The dashboard automatically loads the evaluation metrics generated after model training.
+
+Current metrics include:
+
+* Accuracy
+* Precision
+* Recall
+* F1-score
+* ROC-AUC
+
+---
+
+## Explainability
+
+Model predictions are explained using SHAP (SHapley Additive exPlanations).
+
+The explainability module helps identify which features contribute most to customer credit risk predictions, increasing model transparency and supporting more informed lending decisions.
+
+---
+
+## Interactive Dashboard
+
+The Streamlit dashboard provides:
+
+* Project overview
+* Dataset summary
+* Model performance metrics
+* Confusion matrix
+* ROC curve
+* Feature importance
+* SHAP explainability
+* Business insights
+
+**dashboard screenshots .**
+# Dashboard Preview
+
+## 🏠 Home
+
+<p align="center">
+  <img src="screenshots/home_page.png" width="900">
+</p>
+
+## 📈 Model Performance
+
+<p align="center">
+  <img src="screenshots/model_performance.png" width="900">
+</p>
+
+## 📊 Dataset Overview
+
+<p align="center">
+  <img src="screenshots/data_set_overview.png" width="900">
+</p>
+
+ 
+## Installation
+
+Clone the repository:
 
 ```bash
-# Python 3.9+
-python --version
+git clone https://github.com/codequeen-11/credit-risk-model
+cd credit-risk-model
+```
 
-# Install dependencies
+Create a virtual environment:
+
+```bash
+python -m venv venv
+```
+
+Activate the environment:
+
+**Windows**
+
+```bash
+venv\Scripts\activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
+```
+
+---
+
+## Run the Project
+
+Generate dashboard assets:
+
+```bash
+python src/generate_dashboard_assets.py
+```
+
+Generate SHAP visualizations:
+
+```bash
+python src/generate_shap_assets.py
+```
+
+Run the dashboard:
+
+```bash
+streamlit run app/dashboard.py
+```
+
+Run the API:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Run the tests:
+
+```bash
+pytest
+```
+
+---
+
+## Technologies Used
+
+* Python
+* Pandas
+* NumPy
+* Scikit-learn
+* MLflow
+* Streamlit
+* FastAPI
+* SHAP
+* Matplotlib
+* Pytest
+* GitHub Actions
+
+---
+
+## Future Improvements
+
+* Deploy the dashboard to Streamlit Community Cloud.
+* Containerize the application with Docker.
+* Integrate the FastAPI backend with the dashboard for live predictions.
+* Continuously retrain the model using newly available transaction data.
+* Monitor model performance after deployment.
+
+---
+
+## Author
+
+**Aisha Hussein**
+
+Computer Science Graduate | Junior Machine Learning & AI Engineer | Full-Stack Developer
+
+GitHub: https://github.com/codequeen-11
